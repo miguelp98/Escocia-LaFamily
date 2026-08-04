@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia 2026 - Familia Peñate</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --primary-light: #2d5a87;
+    --accent: #e74c3c;
+    --green: #27ae60;
+    --orange: #f39c12;
+    --blue: #3498db;
+    --purple: #8e44ad;
+    --grey: #95a5a6;
+    --teal: #1abc9c;
+    --bg: #f0f2f5;
+    --card: #fff;
+    --shadow: 0 2px 12px rgba(0,0,0,.08);
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: #333; line-height: 1.5; }
+
+  /* HEADER */
+  #header { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #fff; padding: 20px; text-align: center; position: relative; }
+  #header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  #header p { font-size: .88em; opacity: .9; }
+  #header .subtitle { font-size: .78em; opacity: .7; margin-top: 4px; }
+
+  /* PROGRESS BAR */
+  .progress-container { background: rgba(255,255,255,.15); border-radius: 20px; margin: 12px auto 0; max-width: 500px; height: 8px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #27ae60, #2ecc71); border-radius: 20px; transition: width .5s; }
+  .progress-text { font-size: .72em; opacity: .8; margin-top: 4px; }
+
+  /* LAST UPDATED */
+  .last-updated { font-size: .72em; opacity: .6; margin-top: 6px; }
+
+  /* MAP */
+  #map { height: 50vh; width: 100%; border-bottom: 3px solid var(--primary); }
+
+  /* CONTENT */
+  #content { max-width: 1000px; margin: 0 auto; padding: 15px; }
+
+  /* CARDS */
+  .card { background: var(--card); border-radius: var(--radius); margin-bottom: 14px; box-shadow: var(--shadow); overflow: hidden; }
+  .card-header { padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1em; color: #fff; user-select: none; }
+  .card-header .arrow { transition: transform .3s; font-size: .8em; }
+  .card-header.active .arrow { transform: rotate(180deg); }
+  .card-body { display: none; padding: 12px 16px; }
+  .card-body.show { display: block; }
+
+  /* LEGEND */
+  .legend { padding: 15px; }
+  .legend h2 { font-size: 1.05em; margin-bottom: 10px; color: var(--primary); }
+  .legend-items { display: flex; flex-wrap: wrap; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: .82em; padding: 4px 10px; border-radius: 20px; background: #f5f5f5; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  /* PLACES */
+  .place { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .place:last-child { border-bottom: none; }
+  .place .dot { margin-top: 4px; flex-shrink: 0; }
+  .place-info { flex: 1; }
+  .place-name { font-weight: 600; font-size: .88em; }
+  .place-desc { font-size: .78em; color: #666; margin-top: 2px; }
+  .place-link { font-size: .78em; color: var(--primary-light); text-decoration: none; font-weight: 500; }
+  .place-link:hover { text-decoration: underline; }
+
+  /* BADGES */
+  .badge { display: inline-block; font-size: .68em; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  .badge-green { background: #d4edda; color: #155724; }
+  .badge-red { background: #f8d7da; color: #721c24; }
+  .badge-blue { background: #cce5ff; color: #004085; }
+  .badge-yellow { background: #fff3cd; color: #856404; }
+
+  /* EMERGENCY */
+  .emergency { background: linear-gradient(135deg, #fff5f5, #ffe8e8); border: 1px solid #fcc; }
+  .emergency h2 { color: var(--accent); font-size: 1em; }
+  .emergency-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .emergency-item { background: #fff; padding: 8px 12px; border-radius: 10px; font-size: .82em; border: 1px solid #fee; }
+  .emergency-item strong { color: var(--accent); }
+
+  /* DIARY */
+  .diary-section { padding: 15px; }
+  .diary-section h2 { font-size: 1.05em; margin-bottom: 12px; color: var(--primary); }
+  .family-selector { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .family-btn { padding: 8px 16px; border-radius: 20px; border: 2px solid #ddd; background: #fff; cursor: pointer; font-size: .85em; font-weight: 600; transition: all .2s; }
+  .family-btn:hover { border-color: var(--primary-light); }
+  .family-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .family-btn .emoji { margin-right: 4px; }
+
+  .diary-form { margin-bottom: 15px; }
+  .diary-form textarea { width: 100%; min-height: 80px; border: 1px solid #ddd; border-radius: 10px; padding: 10px; font-family: inherit; font-size: .88em; resize: vertical; }
+  .diary-form textarea:focus { outline: none; border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(45,90,135,.1); }
+  .diary-form-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
+  .diary-form select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 10px; font-size: .85em; background: #fff; }
+  .diary-btn { padding: 8px 20px; border-radius: 20px; border: none; background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; font-size: .85em; transition: background .2s; }
+  .diary-btn:hover { background: var(--primary-light); }
+  .diary-btn-secondary { background: var(--grey); }
+
+  .diary-entries { max-height: 500px; overflow-y: auto; }
+  .diary-entry { background: #f8f9fa; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); position: relative; }
+  .diary-entry.mami { border-left-color: #e91e63; }
+  .diary-entry.papi { border-left-color: #2196f3; }
+  .diary-entry.miguel { border-left-color: #ff9800; }
+  .diary-entry.juan { border-left-color: #4caf50; }
+  .diary-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .diary-entry-author { font-weight: 700; font-size: .85em; }
+  .diary-entry-date { font-size: .75em; color: #999; }
+  .diary-entry-text { font-size: .85em; color: #444; white-space: pre-wrap; }
+  .diary-entry-img { margin-top: 8px; border-radius: 8px; max-width: 100%; max-height: 200px; object-fit: cover; }
+  .diary-entry-delete { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #ccc; cursor: pointer; font-size: 1em; }
+  .diary-entry-delete:hover { color: var(--accent); }
+
+  .diary-empty { text-align: center; padding: 30px; color: #999; font-size: .9em; }
+
+  /* EXPORT/IMPORT */
+  .diary-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* RESERVATIONS TABLE */
+  .reservations { overflow-x: auto; padding: 15px; }
+  .reservations h2 { font-size: 1.05em; margin-bottom: 10px; color: var(--primary); }
+  .res-table { width: 100%; border-collapse: collapse; font-size: .8em; }
+  .res-table th { background: var(--primary); color: #fff; padding: 8px; text-align: left; border: 1px solid #ddd; }
+  .res-table td { padding: 6px 8px; border: 1px solid #ddd; }
+  .res-table tr:nth-child(even) { background: #f9f9f9; }
+  .res-table a { color: var(--primary-light); text-decoration: none; }
+  .res-table a:hover { text-decoration: underline; }
+
+  /* FOOTER */
+  #footer { text-align: center; padding: 20px; color: #999; font-size: .8em; }
+
+  /* PRINT */
+  @media print {
+    #map, .diary-section, .no-print { display: none !important; }
+    .card-body { display: block !important; }
+    .card-header { cursor: default; }
+    body { background: #fff; }
+    .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+  }
+
+  /* MOBILE */
+  @media (max-width: 600px) {
+    #header h1 { font-size: 1.3em; }
+    .emergency-grid { grid-template-columns: 1fr; }
+    .family-selector { gap: 6px; }
+    .family-btn { padding: 6px 12px; font-size: .8em; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia 2026</h1>
+  <p>Familia Peñate · 4–12 Agosto · Tenerife → Edimburgo → Highlands → Skye → Glasgow</p>
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+  </div>
+  <div class="progress-text" id="progressText"></div>
+  <div class="last-updated" id="lastUpdated"></div>
+</div>
+
+<div id="map"></div>
+
+<div id="content">
+
+  <!-- LEGEND -->
+  <div class="card">
+    <div class="card-header" style="background: var(--primary)" onclick="toggleCard(this)">
+      <span>📌 Leyenda del mapa</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body show legend">
+      <div class="legend-items">
+        <span class="legend-item"><span class="dot" style="background:var(--accent)"></span> Alojamiento</span>
+        <span class="legend-item"><span class="dot" style="background:var(--orange)"></span> Atracción</span>
+        <span class="legend-item"><span class="dot" style="background:var(--green)"></span> Restaurante</span>
+        <span class="legend-item"><span class="dot" style="background:var(--blue)"></span> Naturaleza</span>
+        <span class="legend-item"><span class="dot" style="background:var(--purple)"></span> Destilería</span>
+        <span class="legend-item"><span class="dot" style="background:var(--grey)"></span> Supermercado</span>
+        <span class="legend-item"><span class="dot" style="background:#e67e22"></span> Aeropuerto</span>
+        <span class="legend-item"><span class="dot" style="background:var(--teal)"></span> Barco / Crucero</span>
+        <span class="legend-item"><span class="dot" style="background:#2980b9"></span> Coche</span>
+      </div>
+      <div style="margin-top:10px;font-size:.78em;color:#666">
+        <span class="badge badge-green">✅ Reservado</span>
+        <span class="badge badge-red">🔴 Pendiente</span>
+        <span class="badge badge-blue">📌 Opcional</span>
+        <span class="badge badge-yellow">🟡 Reservar pronto</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 1 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 1 · Mié 5 Ago · Llegada a Edimburgo</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body show">
+      <div class="place"><span class="dot" style="background:#e67e22"></span>
+        <div class="place-info"><div class="place-name">✈️ Aeropuerto de Edimburgo (EDI)</div><div class="place-desc">Llegada 00:50 · Ryanair FR2981 desde TFS</div></div>
+        <a class="place-link" href="https://www.google.com/maps/dir/?api=1&destination=Edinburgh+Airport" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--accent)"></span>
+        <div class="place-info"><div class="place-name">🏠 Unite Students - Sugarhouse Close <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">41 Holyrood Road, EH8 · 3 noches (4–7 Ago) · Ref: 68s28684gg</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Unite+Students+Sugarhouse+Close+41+Holyrood+Road+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">🏰 Edinburgh Castle <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">15:30 · Audio guía móvil · Ref: 203072*227542587</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Edinburgh+Castle+Castlehill+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Whiski Rooms <span class="badge badge-yellow">🟡 Reservar</span></div><div class="place-desc">Cocina escocesa · Royal Mile · Haggis, whisky y Cranachan</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Whiski+Rooms+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Devil's Advocate</div><div class="place-desc">Gastro-pub · Cocina escocesa moderna · Old Town</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Devil's+Advocate+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 2 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 2 · Jue 6 Ago · Edimburgo</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">⛰️ Arthur's Seat</div><div class="place-desc">Subida ~1h al volcán · Vistas panorámicas de Edimburgo</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Arthur's+Seat+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">👑 Palacio de Holyroodhouse</div><div class="place-desc">Residencia real · £18.50 online</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Palace+of+Holyroodhouse+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">🏛️ National Museum of Scotland</div><div class="place-desc">Entrada gratuita · Chambers Street</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/National+Museum+of+Scotland+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Scran & Scallie</div><div class="place-desc">Gastro-pub escocés · Stockbridge</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Scran+and+Scallie+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ Makars Gourmet Mash Bar</div><div class="place-desc">Haggis, neeps & tatties · Económico · Royal Mile</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Makars+Gourmet+Mash+Bar+Edinburgh" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--grey)"></span>
+        <div class="place-info"><div class="place-name">🛒 Tesco Metro (Edimburgo)</div><div class="place-desc">Comprar desayunos y agua para el viaje</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Tesco+Metro+Edinburgh+City+Centre" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 3 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 3 · Vie 7 Ago · Edimburgo → Inverness</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:#2980b9"></span>
+        <div class="place-info"><div class="place-name">🚗 Enterprise Edinburgh West</div><div class="place-desc">Recogida coche 15:00 · Nissan Qashqai automático · Conductor: José G. Peñate</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Enterprise+Edinburgh+West+Corstorphine+Road" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">🌉 Forth Bridge (UNESCO)</div><div class="place-desc">Parada rápida · Puente emblemático</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Forth+Bridge+South+Queensferry" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--purple)"></span>
+        <div class="place-info"><div class="place-name">🥃 Tomatin Distillery <span class="badge badge-blue">📌 Opcional</span></div><div class="place-desc">Destilería en la A9 · Tour + cata ~£15</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Tomatin+Distillery+Highland" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">🌲 Cairngorms National Park</div><div class="place-desc">Parque nacional en la ruta A9</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Cairngorms+National+Park" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--accent)"></span>
+        <div class="place-info"><div class="place-name">🏠 Waverley Inn Holiday Apartments <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">1 Fraser St, Inverness IV1 1DW · 1 noche · Ref: 6417670832</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Waverley+Inn+Holiday+Apartments+Inverness" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Mustard Seed <span class="badge badge-yellow">🟡 Reservar</span></div><div class="place-desc">Cocina escocesa moderna · Junto al río Ness</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Mustard+Seed+Inverness" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 4 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 4 · Sáb 8 Ago · Inverness → Loch Ness → Skye</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:var(--teal)"></span>
+        <div class="place-info"><div class="place-name">⛵ Inspiration Cruise <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">Jacobite · 11:00 · 50 min · £21 pp · Clansman Harbour</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Clansman+Harbour+Jacobite+Loch+Ness" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">🏰 Urquhart Castle <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">11:30-12:00 · Parking incluido · Ref: 2028072*227543187</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Urquhart+Castle+Loch+Ness" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Dores Inn <span class="badge badge-yellow">🟡 Reservar</span></div><div class="place-desc">Pub junto a Loch Ness · Cocina local</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Dores+Inn+Loch+Ness" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--grey)"></span>
+        <div class="place-info"><div class="place-name">🛒 Co-op Drumnadrochit</div><div class="place-desc">Supermercado junto a Urquhart · Comprar bocadillos para ruta</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Co-op+Drumnadrochit" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">🏰 Eilean Donan Castle</div><div class="place-desc">Parada fotográfica · Castillo más fotografiado de Escocia</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Eilean+Donan+Castle" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--accent)"></span>
+        <div class="place-info"><div class="place-name">🏠 Skye Backpackers <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">Kyleakin IV41 8PH · 2 noches (8–10 Ago) · 4 huéspedes · Ref: 558-577524177</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Skye+Backpackers+Kyleakin" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Ferry Inn</div><div class="place-desc">Pub tradicional · A 2 min del alojamiento · Marisco y cerveza</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Ferry+Inn+Kyleakin" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 5 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 5 · Dom 9 Ago · Isla de Skye (día completo)</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:var(--purple)"></span>
+        <div class="place-info"><div class="place-name">🥃 Talisker Distillery <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">10:20 · Carbost · Visita + cata · Whisky single malt icónico</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Talisker+Distillery+Carbost+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">💧 Fairy Pools</div><div class="place-desc">Piscinas naturales de agua turquesa · A 5 min de Talisker</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Fairy+Pools+Isle+of+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">🗿 Old Man of Storr</div><div class="place-desc">Senderismo 1.5h · La vista más icónica de Skye</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Old+Man+of+Storr+Isle+of+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">🌊 Kilt Rock & Mealt Falls</div><div class="place-desc">Acantilados con cascada al mar · Fotos espectaculares</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Kilt+Rock+Isle+of+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">🏘️ Portree</div><div class="place-desc">Pueblo principal · Casas de colores · Co-op aquí</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Portree+Isle+of+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Sea Breezes</div><div class="place-desc">Portree · Pescado fresco · Sin reserva, llegar 18:00</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Sea+Breezes+Portree+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--grey)"></span>
+        <div class="place-info"><div class="place-name">🛒 Co-op Portree</div><div class="place-desc">Supermercado · Reponer agua y snacks</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Co-op+Portree" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 6 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 6 · Lun 10 Ago · Skye → Glencoe → Loch Lomond</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">🌿 Fairy Glen</div><div class="place-desc">Ruta corta · Paisajes mágicos · Cerca de Uig</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Fairy+Glen+Isle+of+Skye" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">⛰️ Glencoe</div><div class="place-desc">Valle más dramático de Escocia · Skyfall se rodó aquí</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Glencoe+Highland" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Clachaig Inn</div><div class="place-desc">Pub mítico en Glencoe · Caza local y cerveza artesanal</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Clachaig+Inn+Glencoe" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--accent)"></span>
+        <div class="place-info"><div class="place-name">🏠 Forty Winks Loch Lomond <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">Fisherwood Rd, Balloch G83 8SW · 1 noche · Ref: S2166044S4</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Forty+Winks+Loch+Lomond+Balloch" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Balloch House</div><div class="place-desc">Pub junto al lago · Cocina escocesa tradicional</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Balloch+House+Loch+Lomond" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--blue)"></span>
+        <div class="place-info"><div class="place-name">🏞️ Loch Lomond Shores</div><div class="place-desc">Centro comercial y paseo junto al lago</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Loch+Lomond+Shores+Balloch" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 7 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 7 · Mar 11 Ago · Loch Lomond → Glasgow</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:var(--teal)"></span>
+        <div class="place-info"><div class="place-name">⛵ Loch Lomond Boat Tour <span class="badge badge-red">🔴 Pendiente</span></div><div class="place-desc">Reserva en lochlomondwaterbus.co.uk · ~£20 pp</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Loch+Lomond+Boat+Tour+Balloch" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:#2980b9"></span>
+        <div class="place-info"><div class="place-name">🚗 Enterprise Glasgow (devolver coche)</div><div class="place-desc">Devolver coche 14:30 · 31-41 Mollinsburn St G21 4SE</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Enterprise+Glasgow+Mollinsburn+Street" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--accent)"></span>
+        <div class="place-info"><div class="place-name">🏠 Motel One Glasgow <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">78-82 Oswald St G1 4PL · 1 noche · Ref: 5908087302</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Motel+One+Glasgow+Oswald+Street" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">🏛️ Kelvingrove Art Gallery</div><div class="place-desc">Gratuito · Uno de los mejores museos de UK</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Kelvingrove+Art+Gallery+Glasgow" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ Ubiquitous Chip</div><div class="place-desc">Cocina escocesa icónica · West End · ⭐⭐</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Ubiquitous+Chip+Glasgow" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ The Pot Still</div><div class="place-desc">Whisky bar · 700 variedades · Solo barra</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/The+Pot+Still+Glasgow" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:var(--orange)"></span>
+        <div class="place-info"><div class="place-name">⛪ Glasgow Cathedral</div><div class="place-desc">Catedral medieval · Necrópolis al lado</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Glasgow+Cathedral" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 8 -->
+  <div class="card">
+    <div class="card-header" style="background: #1a3a5c" onclick="toggleCard(this)">
+      <span>📅 Día 8 · Mié 12 Ago · Glasgow → Vuelta a casa</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="place"><span class="dot" style="background:var(--green)"></span>
+        <div class="place-info"><div class="place-name">🍽️ Singl-End</div><div class="place-desc">Desayuno escocés espectacular · Abre 8:00</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Singl-End+Glasgow" target="_blank">📍 Maps</a>
+      </div>
+      <div class="place"><span class="dot" style="background:#e67e22"></span>
+        <div class="place-info"><div class="place-name">✈️ Aeropuerto Glasgow Prestwick (PIK)</div><div class="place-desc">Vuelo FR653 13:55 → TFS 18:35</div></div>
+        <a class="place-link" href="https://www.google.com/maps/search/Glasgow+Prestwick+Airport" target="_blank">📍 Maps</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACTO DE EMERGENCIA -->
+  <div class="card emergency">
+    <div class="card-header" style="background: linear-gradient(135deg, #c0392b, #e74c3c)" onclick="toggleCard(this)">
+      <span>🆘 Contactos de emergencia</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="emergency-grid">
+        <div class="emergency-item"><strong>🚔 Policía:</strong> 999 / 112</div>
+        <div class="emergency-item"><strong>🚑 Ambulancia:</strong> 999</div>
+        <div class="emergency-item"><strong>🏥 NHS 24:</strong> 111</div>
+        <div class="emergency-item"><strong>🇪🇸 Embajada España:</strong> +44 20 7589 3027</div>
+        <div class="emergency-item"><strong>🚗 Enterprise Edimburgo:</strong> +44 131 334 4344</div>
+        <div class="emergency-item"><strong>🚗 Enterprise Glasgow:</strong> +44 141 648 1111</div>
+        <div class="emergency-item"><strong>🏨 Unite Students:</strong> +44 131 662 8200</div>
+        <div class="emergency-item"><strong>🏨 Skye Backpackers:</strong> +44 1599 526 406</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESERVAS -->
+  <div class="card">
+    <div class="card-header" style="background: var(--primary)" onclick="toggleCard(this)">
+      <span>📋 Todas las reservas</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body reservations">
+      <table class="res-table">
+        <tr>
+          <th>Concepto</th>
+          <th>Referencia</th>
+          <th>Detalles</th>
+          <th>Reserva</th>
+        </tr>
+        <tr style="background:#fff3cd">
+          <td><strong>✈️ Vuelo Ida</strong></td>
+          <td>FR2981</td>
+          <td>4 Ago 20:15 TFS → 00:50 EDI</td>
+          <td><a href="Booking/vuelo.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr style="background:#fff3cd">
+          <td><strong>✈️ Vuelo Vuelta</strong></td>
+          <td>FR653</td>
+          <td>12 Ago 13:55 PIK → 18:35 TFS</td>
+          <td><a href="Booking/vuelo.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr style="background:#d4edda">
+          <td><strong>🏰 Edinburgh Castle</strong></td>
+          <td>203072*227542587</td>
+          <td>5 Ago 15:30 · 4 adultos + audio</td>
+          <td><a href="Booking/castillo-edimburgo.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr style="background:#d4edda">
+          <td><strong>🏰 Urquhart Castle</strong></td>
+          <td>2028072*227543187</td>
+          <td>8 Ago 11:30 · Parking incluido</td>
+          <td><a href="Booking/Castillo%20Urquhart%20Reserva.png" target="_blank">📄 Ver</a> · <a href="Booking/reserva-coche-castillourquhart.png" target="_blank">🚗 Parking</a></td>
+        </tr>
+        <tr style="background:#d4edda">
+          <td><strong>🚗 Coche Enterprise</strong></td>
+          <td>—</td>
+          <td>Qashqai auto · 7 Ago 15:00 Edim → 11 Ago 14:30 Glasgow</td>
+          <td><a href="Booking/coche.png" target="_blank">📄 Ver</a><br>Conductor: José G. Peñate<br>Edim: +44 131 334 4344</td>
+        </tr>
+        <tr>
+          <td><strong>🏠 Unite Students</strong></td>
+          <td>68s28684gg</td>
+          <td>41 Holyrood Rd, EH8 · 4-7 Ago</td>
+          <td><a href="Booking/edimburgo.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr>
+          <td><strong>🏠 Waverley Inn</strong></td>
+          <td>6417670832</td>
+          <td>1 Fraser St, IV1 1DW · 7-8 Ago</td>
+          <td><a href="Booking/inverness.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr>
+          <td><strong>🏠 Skye Backpackers</strong></td>
+          <td>558-577524177</td>
+          <td>Kyleakin IV41 8PH · 8-10 Ago</td>
+          <td><a href="Booking/skye.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr>
+          <td><strong>🏠 Forty Winks</strong></td>
+          <td>S2166044S4</td>
+          <td>Fisherwood Rd, G83 8SW · 10-11 Ago</td>
+          <td><a href="Booking/balloch.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr>
+          <td><strong>🏠 Motel One Glasgow</strong></td>
+          <td>5908087302</td>
+          <td>78-82 Oswald St, G1 4PL · 11-12 Ago</td>
+          <td><a href="Booking/glasgos.png" target="_blank">📄 Ver</a></td>
+        </tr>
+        <tr style="background:#d4edda">
+          <td><strong>⛵ Inspiration Cruise</strong></td>
+          <td>Jacobite</td>
+          <td>8 Ago 11:00 · 50 min · £21 pp</td>
+          <td><a href="Booking/Reserva%20Lago%20Ness.png" target="_blank">📄 Info</a> · <a href="Booking/Reserva%20Lago%20Ness%20precio.png" target="_blank">💰 Precio</a></td>
+        </tr>
+        <tr style="background:#d4edda">
+          <td><strong>🥃 Talisker Distillery</strong></td>
+          <td>—</td>
+          <td>9 Ago 10:20 · Carbost, Skye</td>
+          <td><a href="Booking/talisker.png" target="_blank">📄 Ver</a></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- DIARIO FAMILIAR -->
+  <div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #8e44ad, #9b59b6)" onclick="toggleCard(this)">
+      <span>📔 Diario del viaje</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body diary-section">
+      <h2>¿Quién escribe?</h2>
+      <div class="family-selector">
+        <button class="family-btn" data-member="mami" onclick="selectMember(this)"><span class="emoji">👩</span> Mami</button>
+        <button class="family-btn" data-member="papi" onclick="selectMember(this)"><span class="emoji">👨</span> Papi</button>
+        <button class="family-btn" data-member="miguel" onclick="selectMember(this)"><span class="emoji">🧑</span> Miguel</button>
+        <button class="family-btn" data-member="juan" onclick="selectMember(this)"><span class="emoji">👦</span> Juan</button>
+      </div>
+
+      <div class="diary-form">
+        <textarea id="diaryText" placeholder="Escribe aquí lo que quieras recordar..."></textarea>
+        <div class="diary-form-row">
+          <select id="diaryDay">
+            <option value="">📅 Seleccionar día...</option>
+            <option value="1">Día 1 · Mié 5 Ago · Edimburgo</option>
+            <option value="2">Día 2 · Jue 6 Ago · Edimburgo</option>
+            <option value="3">Día 3 · Vie 7 Ago → Inverness</option>
+            <option value="4">Día 4 · Sáb 8 Ago → Skye</option>
+            <option value="5">Día 5 · Dom 9 Ago · Skye</option>
+            <option value="6">Día 6 · Lun 10 Ago → Glasgow</option>
+            <option value="7">Día 7 · Mar 11 Ago · Glasgow</option>
+            <option value="8">Día 8 · Mié 12 Ago · Vuelta</option>
+          </select>
+          <label class="diary-btn diary-btn-secondary" style="cursor:pointer">
+            📷 Foto
+            <input type="file" id="diaryPhoto" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+          </label>
+          <button class="diary-btn" onclick="saveEntry()">💾 Guardar</button>
+        </div>
+        <div id="photoPreview" style="margin-top:8px"></div>
+      </div>
+
+      <div class="diary-entries" id="diaryEntries">
+        <div class="diary-empty" id="diaryEmpty">
+          ✍️ ¡Aún no hay entradas!<br>
+          <small>Selecciona quién eres, escribe algo y dale a Guardar.</small>
+        </div>
+      </div>
+
+      <div class="diary-actions">
+        <button class="diary-btn" onclick="exportDiary()">📤 Exportar diario</button>
+        <label class="diary-btn diary-btn-secondary" style="cursor:pointer">
+          📥 Importar diario
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importDiary(this)">
+        </label>
+        <button class="diary-btn diary-btn-secondary" onclick="clearDiary()">🗑️ Borrar todo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LISTA MALETA (mini) -->
+  <div class="card">
+    <div class="card-header" style="background: #e67e22" onclick="toggleCard(this)">
+      <span>🧳 Recordatorios de equipaje</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.85em">
+        <div>
+          <strong>Imprescindibles:</strong>
+          <ul style="margin-top:4px;padding-left:18px">
+            <li>Chaqueta impermeable + cortavientos</li>
+            <li>Calzado trekking impermeable</li>
+            <li>Adaptador enchufe británico (tipo G)</li>
+            <li>Documentos + pasaportes</li>
+            <li>DNI / Tarjeta sanitaria</li>
+          </ul>
+        </div>
+        <div>
+          <strong>No olvidar:</strong>
+          <ul style="margin-top:4px;padding-left:18px">
+            <li>Power bank para el móvil</li>
+            <li>Pantalones trekking (NO jeans)</li>
+            <li>Fleece / forro polar</li>
+            <li>Gafas de sol</li>
+            <li>Creama hidratante (viento seco)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="footer">
+  🏴󠁧󠁢󠁳󠁣󠁴󠁿 Que tengáis un viaje increíble · Familia Peñate · Agosto 2026
+</div>
+
+<script>
+// === MAP ===
+const map = L.map('map').setView([56.5, -4.5], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+const places = [
+  { name: 'Aeropuerto Tenerife Sur (TFS)', lat: 28.044, lng: -16.572, color: '#e67e22', icon: '✈️' },
+  { name: 'Aeropuerto Edimburgo (EDI)', lat: 55.95, lng: -3.372, color: '#e67e22', icon: '✈️' },
+  { name: 'Aeropuerto Glasgow Prestwick (PIK)', lat: 55.509, lng: -4.586, color: '#e67e22', icon: '✈️' },
+  { name: 'Unite Students - Sugarhouse Close (Edimburgo)', lat: 55.951, lng: -3.179, color: '#e74c3c', icon: '🏠' },
+  { name: 'Waverley Inn (Inverness)', lat: 57.477, lng: -4.225, color: '#e74c3c', icon: '🏠' },
+  { name: 'Skye Backpackers (Kyleakin)', lat: 57.274, lng: -5.728, color: '#e74c3c', icon: '🏠' },
+  { name: 'Forty Winks (Loch Lomond)', lat: 56.001, lng: -4.582, color: '#e74c3c', icon: '🏠' },
+  { name: 'Motel One Glasgow', lat: 55.859, lng: -4.258, color: '#e74c3c', icon: '🏠' },
+  { name: 'Edinburgh Castle', lat: 55.949, lng: -3.200, color: '#f39c12', icon: '🏰' },
+  { name: "Arthur's Seat", lat: 55.944, lng: -3.162, color: '#3498db', icon: '⛰️' },
+  { name: 'Holyrood Palace', lat: 55.953, lng: -3.172, color: '#f39c12', icon: '👑' },
+  { name: 'National Museum of Scotland', lat: 55.947, lng: -3.189, color: '#f39c12', icon: '🏛️' },
+  { name: 'Forth Bridge (UNESCO)', lat: 56.001, lng: -3.401, color: '#3498db', icon: '🌉' },
+  { name: 'Tomatin Distillery', lat: 57.335, lng: -4.000, color: '#8e44ad', icon: '🥃' },
+  { name: 'Cairngorms National Park', lat: 57.1, lng: -3.8, color: '#3498db', icon: '🌲' },
+  { name: 'Urquhart Castle', lat: 57.324, lng: -4.442, color: '#f39c12', icon: '🏰' },
+  { name: 'Clansman Harbour (Inspiration Cruise)', lat: 57.365, lng: -4.392, color: '#1abc9c', icon: '⛵' },
+  { name: 'Eilean Donan Castle', lat: 57.273, lng: -5.517, color: '#f39c12', icon: '🏰' },
+  { name: 'Talisker Distillery', lat: 57.303, lng: -6.355, color: '#8e44ad', icon: '🥃' },
+  { name: 'Fairy Pools', lat: 57.255, lng: -6.222, color: '#3498db', icon: '💧' },
+  { name: 'Old Man of Storr', lat: 57.510, lng: -6.171, color: '#3498db', icon: '🗿' },
+  { name: 'Kilt Rock', lat: 57.602, lng: -6.175, color: '#3498db', icon: '🌊' },
+  { name: 'Portree', lat: 57.412, lng: -6.194, color: '#f39c12', icon: '🏘️' },
+  { name: 'Fairy Glen', lat: 57.443, lng: -6.338, color: '#3498db', icon: '🌿' },
+  { name: 'Glencoe', lat: 56.683, lng: -5.037, color: '#3498db', icon: '⛰️' },
+  { name: 'Loch Lomond', lat: 56.0, lng: -4.6, color: '#3498db', icon: '🏞️' },
+  { name: 'Kelvingrove Museum', lat: 55.868, lng: -4.291, color: '#f39c12', icon: '🏛️' },
+  { name: 'Glasgow Cathedral', lat: 55.862, lng: -4.235, color: '#f39c12', icon: '⛪' },
+  { name: 'The Whiski Rooms (Edimburgo)', lat: 55.951, lng: -3.186, color: '#27ae60', icon: '🍽️' },
+  { name: "Makars Mash Bar (Edimburgo)", lat: 55.950, lng: -3.185, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Scran & Scallie (Edimburgo)', lat: 55.958, lng: -3.206, color: '#27ae60', icon: '🍽️' },
+  { name: "The Devil's Advocate (Edimburgo)", lat: 55.948, lng: -3.193, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Mustard Seed (Inverness)', lat: 57.476, lng: -4.227, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Dores Inn (Loch Ness)', lat: 57.382, lng: -4.341, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Ferry Inn (Kyleakin)', lat: 57.273, lng: -5.729, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Sea Breezes (Portree)', lat: 57.413, lng: -6.194, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Clachaig Inn (Glencoe)', lat: 56.685, lng: -5.009, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Balloch House (Loch Lomond)', lat: 56.001, lng: -4.579, color: '#27ae60', icon: '🍽️' },
+  { name: 'Ubiquitous Chip (Glasgow)', lat: 55.871, lng: -4.289, color: '#27ae60', icon: '🍽️' },
+  { name: 'The Pot Still (Glasgow)', lat: 55.861, lng: -4.256, color: '#27ae60', icon: '🍽️' },
+  { name: 'Tesco Metro Edinburgh', lat: 55.953, lng: -3.190, color: '#95a5a6', icon: '🛒' },
+  { name: 'Co-op Drumnadrochit', lat: 57.334, lng: -4.480, color: '#95a5a6', icon: '🛒' },
+  { name: 'Co-op Broadford (Skye)', lat: 57.241, lng: -5.905, color: '#95a5a6', icon: '🛒' },
+  { name: 'Co-op Portree', lat: 57.412, lng: -6.194, color: '#95a5a6', icon: '🛒' },
+  { name: 'Enterprise Edinburgh West', lat: 55.942, lng: -3.233, color: '#2980b9', icon: '🚗' },
+  { name: 'Enterprise Glasgow', lat: 55.869, lng: -4.208, color: '#2980b9', icon: '🚗' },
+];
+
+places.forEach(p => {
+  const icon = L.divIcon({
+    html: `<div style="background:${p.color};color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)">${p.icon}</div>`,
+    className: '',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+  L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`<b>${p.name}</b>`);
+});
+
+// Routes per day
+const routes = [
+  { color: '#e74c3c', points: [[55.95,-3.372],[55.951,-3.179],[55.949,-3.200],[55.947,-3.189],[55.951,-3.179]] },
+  { color: '#2980b9', points: [[55.942,-3.233],[56.001,-3.401],[57.335,-4.000],[57.477,-4.225]] },
+  { color: '#f39c12', points: [[57.477,-4.225],[57.365,-4.392],[57.324,-4.442],[57.273,-5.517],[57.274,-5.728]] },
+  { color: '#8e44ad', points: [[57.274,-5.728],[57.303,-6.355],[57.255,-6.222],[57.510,-6.171],[57.602,-6.175],[57.412,-6.194],[57.274,-5.728]] },
+  { color: '#3498db', points: [[57.274,-5.728],[57.443,-6.338],[56.685,-5.009],[56.001,-4.582]] },
+  { color: '#27ae60', points: [[56.001,-4.582],[55.869,-4.208],[55.859,-4.258],[55.509,-4.586]] },
+];
+routes.forEach(r => {
+  L.polyline(r.points, { color: r.color, weight: 3, opacity: .5, dashArray: '8,6' }).addTo(map);
+});
+
+// === TOGGLE CARDS ===
+function toggleCard(el) {
+  el.classList.toggle('active');
+  el.nextElementSibling.classList.toggle('show');
+}
+
+// === PROGRESS BAR ===
+(function() {
+  const tripStart = new Date('2026-08-04T20:15:00');
+  const tripEnd = new Date('2026-08-12T18:35:00');
+  const now = new Date();
+  const total = tripEnd - tripStart;
+  const elapsed = now - tripStart;
+  let pct = Math.max(0, Math.min(100, (elapsed / total) * 100));
+
+  const bar = document.getElementById('progressBar');
+  const text = document.getElementById('progressText');
+  const upd = document.getElementById('lastUpdated');
+
+  bar.style.width = pct + '%';
+
+  if (now < tripStart) {
+    const days = Math.ceil((tripStart - now) / 86400000);
+    text.textContent = `Faltan ${days} día${days > 1 ? 's' : ''} para el viaje`;
+    bar.style.background = 'linear-gradient(90deg, #f39c12, #e67e22)';
+  } else if (now > tripEnd) {
+    text.textContent = '🎉 ¡Viaje completado!';
+    bar.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+  } else {
+    const dayNum = Math.floor(elapsed / 86400000) + 1;
+    text.textContent = `Día ${dayNum} de 8 · ${Math.round(pct)}% del viaje completado`;
+    bar.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+  }
+
+  upd.textContent = 'Última actualización: ' + new Date().toLocaleString('es-ES');
+})();
+
+// === DIARY ===
+let selectedMember = '';
+let photoData = null;
+
+const memberColors = { mami: '#e91e63', papi: '#2196f3', miguel: '#ff9800', juan: '#4caf50' };
+const memberNames = { mami: 'Mami', papi: 'Papi', miguel: 'Miguel', juan: 'Juan' };
+
+function selectMember(btn) {
+  document.querySelectorAll('.family-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedMember = btn.dataset.member;
+  document.getElementById('diaryText').focus();
+}
+
+function previewPhoto(input) {
+  const preview = document.getElementById('photoPreview');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      photoData = e.target.result;
+      preview.innerHTML = `<img src="${photoData}" class="diary-entry-img" style="max-height:120px">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function saveEntry() {
+  if (!selectedMember) { alert('Selecciona quién escribe (Mami, Papi, Miguel o Juan)'); return; }
+  const text = document.getElementById('diaryText').value.trim();
+  if (!text && !photoData) { alert('Escribe algo o añade una foto'); return; }
+
+  const day = document.getElementById('diaryDay').value;
+  const entry = {
+    id: Date.now(),
+    member: selectedMember,
+    text: text,
+    photo: photoData,
+    day: day,
+    date: new Date().toLocaleString('es-ES')
+  };
+
+  let entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
+  entries.unshift(entry);
+  localStorage.setItem('scotlandDiary', JSON.stringify(entries));
+
+  document.getElementById('diaryText').value = '';
+  document.getElementById('diaryPhoto').value = '';
+  document.getElementById('photoPreview').innerHTML = '';
+  document.getElementById('diaryDay').value = '';
+  photoData = null;
+
+  renderEntries();
+}
+
+function renderEntries() {
+  const entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
+  const container = document.getElementById('diaryEntries');
+  const empty = document.getElementById('diaryEmpty');
+
+  if (entries.length === 0) {
+    container.innerHTML = '';
+    container.appendChild(empty);
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  container.innerHTML = entries.map(e => `
+    <div class="diary-entry ${e.member}">
+      <button class="diary-entry-delete" onclick="deleteEntry(${e.id})" title="Eliminar">✕</button>
+      <div class="diary-entry-header">
+        <span class="diary-entry-author" style="color:${memberColors[e.member]}">${memberNames[e.member]}</span>
+        <span class="diary-entry-date">${e.day ? 'Día ' + e.day + ' · ' : ''}${e.date}</span>
+      </div>
+      ${e.text ? `<div class="diary-entry-text">${escapeHtml(e.text)}</div>` : ''}
+      ${e.photo ? `<img src="${e.photo}" class="diary-entry-img">` : ''}
+    </div>
+  `).join('');
+}
+
+function deleteEntry(id) {
+  if (!confirm('¿Eliminar esta entrada?')) return;
+  let entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
+  entries = entries.filter(e => e.id !== id);
+  localStorage.setItem('scotlandDiary', JSON.stringify(entries));
+  renderEntries();
+}
+
+function exportDiary() {
+  const entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
+  if (entries.length === 0) { alert('No hay entradas para exportar'); return; }
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'diario-escocia-2026.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importDiary(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      let existing = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
+      const existingIds = new Set(existing.map(x => x.id));
+      const newEntries = imported.filter(x => !existingIds.has(x.id));
+      existing = [...newEntries, ...existing];
+      localStorage.setItem('scotlandDiary', JSON.stringify(existing));
+      renderEntries();
+      alert(`${newEntries.length} entradas importadas`);
+    } catch (err) {
+      alert('Error al importar: archivo no válido');
+    }
+  };
+  reader.readAsText(input.files[0]);
+}
+
+function clearDiary() {
+  if (!confirm('⚠️ ¿Borrar TODO el diario? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem('scotlandDiary');
+  renderEntries();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Init
+renderEntries();
+</script>
+</body>
+</html>
