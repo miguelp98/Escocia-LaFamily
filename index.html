@@ -118,6 +118,13 @@
 
   .diary-empty { text-align: center; padding: 30px; color: #999; font-size: .9em; }
 
+  /* MEAL STATUS */
+  .meal-status { display: flex; gap: 10px; padding: 10px 0 6px; margin-bottom: 6px; border-bottom: 1px dashed #e0e0e0; flex-wrap: wrap; }
+  .meal-badge { display: inline-flex; align-items: center; gap: 5px; font-size: .78em; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+  .meal-badge.booked { background: #d4edda; color: #155724; }
+  .meal-badge.pending { background: #fff3cd; color: #856404; }
+  .meal-badge.none { background: #f0f0f0; color: #999; }
+
   /* EXPORT/IMPORT */
   .diary-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
@@ -202,6 +209,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body show">
+      <div class="meal-status">
+        <span class="meal-badge none">🍽️ Comida: No aplica (llegada 00:50)</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:#e67e22"></span>
         <div class="place-info"><div class="place-name">✈️ Aeropuerto de Edimburgo (EDI)</div><div class="place-desc">Llegada 00:50 · Ryanair FR2981 desde TFS</div></div>
         <a class="place-link" href="https://www.google.com/maps/dir/?api=1&destination=Edinburgh+Airport" target="_blank">📍 Maps</a>
@@ -236,6 +247,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:var(--blue)"></span>
         <div class="place-info"><div class="place-name">⛰️ Arthur's Seat</div><div class="place-desc">Subida ~1h al volcán · Vistas panorámicas de Edimburgo</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Arthur's+Seat+Edinburgh" target="_blank">📍 Maps</a>
@@ -270,6 +285,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:#2980b9"></span>
         <div class="place-info"><div class="place-name">🚗 Enterprise Edinburgh West</div><div class="place-desc">Recogida coche 15:00 · Nissan Qashqai automático · Conductor: José G. Peñate</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Enterprise+Edinburgh+West+Corstorphine+Road" target="_blank">📍 Maps</a>
@@ -304,6 +323,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:var(--teal)"></span>
         <div class="place-info"><div class="place-name">⛵ Inspiration Cruise <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">Jacobite · 11:00 · 50 min · £21 pp · Clansman Harbour</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Clansman+Harbour+Jacobite+Loch+Ness" target="_blank">📍 Maps</a>
@@ -342,6 +365,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:var(--purple)"></span>
         <div class="place-info"><div class="place-name">🥃 Talisker Distillery <span class="badge badge-green">✅ Reservado</span></div><div class="place-desc">10:20 · Carbost · Visita + cata · Whisky single malt icónico</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Talisker+Distillery+Carbost+Skye" target="_blank">📍 Maps</a>
@@ -380,6 +407,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:var(--blue)"></span>
         <div class="place-info"><div class="place-name">🌿 Fairy Glen</div><div class="place-desc">Ruta corta · Paisajes mágicos · Cerca de Uig</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Fairy+Glen+Isle+of+Skye" target="_blank">📍 Maps</a>
@@ -414,6 +445,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge pending">🌙 Cena: Pendiente...</span>
+      </div>
       <div class="place"><span class="dot" style="background:var(--teal)"></span>
         <div class="place-info"><div class="place-name">⛵ Loch Lomond Boat Tour <span class="badge badge-red">🔴 Pendiente</span></div><div class="place-desc">Reserva en lochlomondwaterbus.co.uk · ~£20 pp</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Loch+Lomond+Boat+Tour+Balloch" target="_blank">📍 Maps</a>
@@ -452,6 +487,10 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body">
+      <div class="meal-status">
+        <span class="meal-badge pending">🍽️ Comida: Pendiente...</span>
+        <span class="meal-badge none">🌙 Cena: No aplica (vuelo 13:55)</span>
+      </div>
       <div class="place"><span class="dot" style="background:var(--green)"></span>
         <div class="place-info"><div class="place-name">🍽️ Singl-End</div><div class="place-desc">Desayuno escocés espectacular · Abre 8:00</div></div>
         <a class="place-link" href="https://www.google.com/maps/search/Singl-End+Glasgow" target="_blank">📍 Maps</a>
