@@ -707,13 +707,8 @@
             <option value="7">Día 7 · Mar 11 Ago · Glasgow</option>
             <option value="8">Día 8 · Mié 12 Ago · Vuelta</option>
           </select>
-          <label class="diary-btn diary-btn-secondary" style="cursor:pointer">
-            📷 Foto
-            <input type="file" id="diaryPhoto" accept="image/*" style="display:none" onchange="previewPhoto(this)">
-          </label>
           <button class="diary-btn" onclick="saveEntry()">💾 Guardar</button>
         </div>
-        <div id="photoPreview" style="margin-top:8px"></div>
       </div>
 
       <div class="diary-entries" id="diaryEntries">
@@ -857,19 +852,16 @@ function toggleCard(el) {
   upd.textContent = 'Última actualización: ' + new Date().toLocaleString('es-ES');
 })();
 
-// === DIARY (GitHub-backed with photos) ===
+// === DIARY (GitHub-backed) ===
 const DIARY_CONFIG = {
   owner: 'miguelp98',
   repo: 'Escocia-LaFamily',
   path: 'diario.json',
-  photosDir: 'diario-fotos',
   branch: 'main'
 };
 
-const RAW_BASE = `https://raw.githubusercontent.com/${DIARY_CONFIG.owner}/${DIARY_CONFIG.repo}/${DIARY_CONFIG.branch}`;
-const RAW_URL = `${RAW_BASE}/${DIARY_CONFIG.path}`;
-const API_URL = `https://api.github.com/repos/${DIARY_CONFIG.owner}/${DIARY_CONFIG.repo}/contents`;
-const PHOTOS_RAW = `${RAW_BASE}/${DIARY_CONFIG.photosDir}`;
+const RAW_URL = `https://raw.githubusercontent.com/${DIARY_CONFIG.owner}/${DIARY_CONFIG.repo}/${DIARY_CONFIG.branch}/${DIARY_CONFIG.path}`;
+const API_URL = `https://api.github.com/repos/${DIARY_CONFIG.owner}/${DIARY_CONFIG.repo}/contents/${DIARY_CONFIG.path}`;
 
 const memberColors = { mami: '#e91e63', papi: '#2196f3', miguel: '#ff9800', juan: '#4caf50' };
 const memberNames = { mami: 'Mami', papi: 'Papi', miguel: 'Miguel', juan: 'Juan' };
@@ -877,7 +869,6 @@ const memberNames = { mami: 'Mami', papi: 'Papi', miguel: 'Miguel', juan: 'Juan'
 let selectedMember = '';
 let diaryEntries = [];
 let diarySHA = '';
-let pendingPhoto = null;
 
 function getStoredToken() { return localStorage.getItem('gh_diary_token') || ''; }
 function setStoredToken(t) { localStorage.setItem('gh_diary_token', t); }
@@ -909,59 +900,8 @@ function selectMember(btn) {
   document.getElementById('diaryText').focus();
 }
 
-// === Photo compression ===
-function compressImage(file, maxSize) {
-  maxSize = maxSize || 1200;
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > maxSize || h > maxSize) {
-          if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
-          else { w = Math.round(w * maxSize / h); h = maxSize; }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        canvas.toBlob(function(blob) {
-          resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.8);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function previewPhoto(input) {
-  const preview = document.getElementById('photoPreview');
-  if (input.files && input.files[0]) {
-    compressImage(input.files[0]).then(compressed => {
-      pendingPhoto = compressed;
-      const url = URL.createObjectURL(compressed);
-      preview.innerHTML = `<img src="${url}" style="max-height:120px;border-radius:8px"> <button class="diary-btn diary-btn-secondary" onclick="removePhoto()" style="font-size:.75em;padding:4px 10px">✕ Quitar</button>`;
-    });
-  }
-}
-
-function removePhoto() {
-  pendingPhoto = null;
-  document.getElementById('photoPreview').innerHTML = '';
-  document.getElementById('diaryPhoto').value = '';
-}
-
-// === GitHub API helpers ===
-async function getGitHubToken() {
-  let token = getStoredToken();
-  if (!token) { token = askForToken(); }
-  return token;
-}
-
 async function ghGetFile(path) {
-  const token = await getGitHubToken();
+  const token = getStoredToken();
   if (!token) return null;
   const res = await fetch(`${API_URL}/${path}`, {
     headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
@@ -971,7 +911,8 @@ async function ghGetFile(path) {
 }
 
 async function ghUploadFile(path, content, message, sha) {
-  const token = await getGitHubToken();
+  let token = getStoredToken();
+  if (!token) { token = askForToken(); }
   if (!token) throw new Error('No token');
   const body = { message, content, branch: DIARY_CONFIG.branch };
   if (sha) body.sha = sha;
@@ -991,22 +932,6 @@ async function ghUploadFile(path, content, message, sha) {
   return await res.json();
 }
 
-async function ghDeleteFile(path, sha, message) {
-  const token = await getGitHubToken();
-  if (!token) throw new Error('No token');
-  const res = await fetch(`${API_URL}/${path}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': 'token ' + token,
-      'Content-Type': 'application/json',
-      'Accept': 'application/vnd.github.v3+json'
-    },
-    body: JSON.stringify({ message, sha, branch: DIARY_CONFIG.branch })
-  });
-  return res.ok;
-}
-
-// === Diary CRUD ===
 async function loadDiary() {
   try {
     diaryStatus('Cargando diario...', 'info');
@@ -1022,48 +947,23 @@ async function loadDiary() {
   diaryStatus('', '');
 }
 
-async function uploadPhoto(file) {
-  const ext = file.name.split('.').pop() || 'jpg';
-  const filename = `photo_${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
-  const content = await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.readAsDataURL(file);
-  });
-  await ghUploadFile(`${DIARY_CONFIG.photosDir}/${filename}`, content, `Foto: ${filename}`);
-  return filename;
-}
-
-async function deletePhotoFile(filename) {
-  try {
-    const data = await ghGetFile(`${DIARY_CONFIG.photosDir}/${filename}`);
-    if (data) await ghDeleteFile(`${DIARY_CONFIG.photosDir}/${filename}`, data.sha, `Eliminar foto: ${filename}`);
-  } catch (e) {}
-}
-
 async function saveEntry() {
   if (!selectedMember) { alert('Selecciona quién escribe (Mami, Papi, Miguel o Juan)'); return; }
   const text = document.getElementById('diaryText').value.trim();
-  if (!text && !pendingPhoto) { alert('Escribe algo o añade una foto'); return; }
+  if (!text) { alert('Escribe algo antes de guardar'); return; }
 
   const day = document.getElementById('diaryDay').value;
-  const entry = { id: Date.now(), member: selectedMember, text, day, date: new Date().toLocaleString('es-ES') };
+  diaryEntries.unshift({ id: Date.now(), member: selectedMember, text, day, date: new Date().toLocaleString('es-ES') });
 
-  if (pendingPhoto) {
-    diaryStatus('Subiendo foto...', 'info');
-    try { entry.photo = await uploadPhoto(pendingPhoto); }
-    catch (e) { diaryStatus('⚠️ Error al subir foto', 'error'); return; }
-  }
-
-  diaryEntries.unshift(entry);
   document.getElementById('diaryText').value = '';
   document.getElementById('diaryDay').value = '';
-  removePhoto();
   renderEntries();
   diaryStatus('Guardando...', 'info');
 
   try {
-    await commitDiary('Entrada de ' + memberNames[selectedMember]);
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(diaryEntries, null, 2))));
+    const data = await ghUploadFile(DIARY_CONFIG.path, content, 'Entrada de ' + memberNames[selectedMember], diarySHA || undefined);
+    diarySHA = data.content.sha;
     diaryStatus('✅ Guardado', 'ok');
     setTimeout(() => diaryStatus('', ''), 2000);
   } catch (e) {
@@ -1073,24 +973,18 @@ async function saveEntry() {
 
 async function deleteEntry(id) {
   if (!confirm('¿Eliminar esta entrada?')) return;
-  const entry = diaryEntries.find(e => e.id === id);
   diaryEntries = diaryEntries.filter(e => e.id !== id);
   renderEntries();
   diaryStatus('Eliminando...', 'info');
-  if (entry && entry.photo) await deletePhotoFile(entry.photo);
   try {
-    await commitDiary('Eliminar entrada');
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(diaryEntries, null, 2))));
+    const data = await ghUploadFile(DIARY_CONFIG.path, content, 'Eliminar entrada', diarySHA || undefined);
+    diarySHA = data.content.sha;
     diaryStatus('✅ Eliminado', 'ok');
     setTimeout(() => diaryStatus('', ''), 2000);
   } catch (e) {
     diaryStatus('⚠️ Eliminado localmente (error al sincronizar)', 'error');
   }
-}
-
-async function commitDiary(message) {
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(diaryEntries, null, 2))));
-  const data = await ghUploadFile(DIARY_CONFIG.path, content, message, diarySHA || undefined);
-  diarySHA = data.content.sha;
 }
 
 function renderEntries() {
@@ -1111,7 +1005,6 @@ function renderEntries() {
         <span class="diary-entry-date">${e.day ? 'Día ' + e.day + ' · ' : ''}${e.date}</span>
       </div>
       ${e.text ? `<div class="diary-entry-text">${escapeHtml(e.text)}</div>` : ''}
-      ${e.photo ? `<img src="${PHOTOS_RAW}/${e.photo}" class="diary-entry-img" loading="lazy">` : ''}
     </div>
   `).join('');
 }
@@ -1135,7 +1028,9 @@ function importDiary(input) {
       diaryEntries = [...newEntries, ...diaryEntries];
       renderEntries();
       diaryStatus('Importando...', 'info');
-      await commitDiary('Importar ' + newEntries.length + ' entradas');
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(diaryEntries, null, 2))));
+      const data = await ghUploadFile(DIARY_CONFIG.path, content, 'Importar ' + newEntries.length + ' entradas', diarySHA || undefined);
+      diarySHA = data.content.sha;
       diaryStatus('✅ ' + newEntries.length + ' entradas importadas', 'ok');
       setTimeout(() => diaryStatus('', ''), 2000);
     } catch (err) { alert('Error al importar: archivo no válido'); }
@@ -1149,7 +1044,9 @@ async function clearDiary() {
   renderEntries();
   diaryStatus('Borrando...', 'info');
   try {
-    await commitDiary('Borrar diario');
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(diaryEntries, null, 2))));
+    const data = await ghUploadFile(DIARY_CONFIG.path, content, 'Borrar diario', diarySHA || undefined);
+    diarySHA = data.content.sha;
     diaryStatus('✅ Diario borrado', 'ok');
     setTimeout(() => diaryStatus('', ''), 2000);
   } catch (e) {
