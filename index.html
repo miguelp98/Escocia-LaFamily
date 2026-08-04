@@ -681,6 +681,7 @@
       <span class="arrow">▼</span>
     </div>
     <div class="card-body diary-section">
+      <div id="diaryStatus" style="display:none;padding:8px 12px;border-radius:8px;font-size:.82em;font-weight:600;margin-bottom:10px"></div>
       <h2>¿Quién escribe?</h2>
       <div class="family-selector">
         <button class="family-btn" data-member="mami" onclick="selectMember(this)"><span class="emoji">👩</span> Mami</button>
@@ -703,13 +704,8 @@
             <option value="7">Día 7 · Mar 11 Ago · Glasgow</option>
             <option value="8">Día 8 · Mié 12 Ago · Vuelta</option>
           </select>
-          <label class="diary-btn diary-btn-secondary" style="cursor:pointer">
-            📷 Foto
-            <input type="file" id="diaryPhoto" accept="image/*" style="display:none" onchange="previewPhoto(this)">
-          </label>
           <button class="diary-btn" onclick="saveEntry()">💾 Guardar</button>
         </div>
-        <div id="photoPreview" style="margin-top:8px"></div>
       </div>
 
       <div class="diary-entries" id="diaryEntries">
@@ -853,12 +849,55 @@ function toggleCard(el) {
   upd.textContent = 'Última actualización: ' + new Date().toLocaleString('es-ES');
 })();
 
-// === DIARY ===
-let selectedMember = '';
-let photoData = null;
+// === DIARY (GitHub-backed) ===
+const DIARY_CONFIG = {
+  owner: 'miguelp98',
+  repo: 'Escocia-LaFamily',
+  path: 'diario.json',
+  branch: 'main'
+};
+
+const RAW_URL = `https://raw.githubusercontent.com/${DIARY_CONFIG.owner}/${DIARY_CONFIG.repo}/${DIARY_CONFIG.branch}/${DIARY_CONFIG.path}`;
+const API_URL = `https://api.github.com/repos/${DIARY_CONFIG.owner}/${DIARY_CONFIG.repo}/contents/${DIARY_CONFIG.path}`;
 
 const memberColors = { mami: '#e91e63', papi: '#2196f3', miguel: '#ff9800', juan: '#4caf50' };
 const memberNames = { mami: 'Mami', papi: 'Papi', miguel: 'Miguel', juan: 'Juan' };
+
+let selectedMember = '';
+let diaryEntries = [];
+let diarySHA = '';
+
+function getStoredToken() {
+  return localStorage.getItem('gh_diary_token') || '';
+}
+
+function setStoredToken(token) {
+  localStorage.setItem('gh_diary_token', token);
+}
+
+function askForToken() {
+  const existing = getStoredToken();
+  const token = prompt(
+    'Para guardar entradas en el diario, introduce el token de GitHub de Miguel.\n' +
+    '(Solo se pide una vez, se guarda en tu navegador).\n\n' +
+    'Token:',
+    existing
+  );
+  if (token && token.trim()) {
+    setStoredToken(token.trim());
+    return token.trim();
+  }
+  return null;
+}
+
+function diaryStatus(msg, type) {
+  const el = document.getElementById('diaryStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+  el.style.background = type === 'error' ? '#f8d7da' : type === 'ok' ? '#d4edda' : '#cce5ff';
+  el.style.color = type === 'error' ? '#721c24' : type === 'ok' ? '#155724' : '#004085';
+}
 
 function selectMember(btn) {
   document.querySelectorAll('.family-btn').forEach(b => b.classList.remove('active'));
@@ -867,52 +906,112 @@ function selectMember(btn) {
   document.getElementById('diaryText').focus();
 }
 
-function previewPhoto(input) {
-  const preview = document.getElementById('photoPreview');
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      photoData = e.target.result;
-      preview.innerHTML = `<img src="${photoData}" class="diary-entry-img" style="max-height:120px">`;
-    };
-    reader.readAsDataURL(input.files[0]);
+async function loadDiary() {
+  try {
+    diaryStatus('Cargando diario...', 'info');
+    const res = await fetch(RAW_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('No se pudo cargar');
+    diaryEntries = await res.json();
+  } catch (e) {
+    diaryEntries = [];
   }
+  // Get SHA for future commits (needs token)
+  const token = getStoredToken();
+  if (token) {
+    try {
+      const apiRes = await fetch(API_URL, {
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        diarySHA = data.sha;
+      }
+    } catch (e) {}
+  }
+  renderEntries();
+  diaryStatus('', '');
 }
 
-function saveEntry() {
+async function saveEntry() {
   if (!selectedMember) { alert('Selecciona quién escribe (Mami, Papi, Miguel o Juan)'); return; }
   const text = document.getElementById('diaryText').value.trim();
-  if (!text && !photoData) { alert('Escribe algo o añade una foto'); return; }
+  if (!text) { alert('Escribe algo antes de guardar'); return; }
 
   const day = document.getElementById('diaryDay').value;
   const entry = {
     id: Date.now(),
     member: selectedMember,
     text: text,
-    photo: photoData,
     day: day,
     date: new Date().toLocaleString('es-ES')
   };
 
-  let entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
-  entries.unshift(entry);
-  localStorage.setItem('scotlandDiary', JSON.stringify(entries));
+  diaryEntries.unshift(entry);
 
   document.getElementById('diaryText').value = '';
-  document.getElementById('diaryPhoto').value = '';
-  document.getElementById('photoPreview').innerHTML = '';
   document.getElementById('diaryDay').value = '';
-  photoData = null;
-
   renderEntries();
+  diaryStatus('Guardando...', 'info');
+
+  try {
+    await commitDiary('Entrada de ' + memberNames[selectedMember]);
+    diaryStatus('✅ Guardado', 'ok');
+    setTimeout(() => diaryStatus('', ''), 2000);
+  } catch (e) {
+    diaryStatus('⚠️ Guardado localmente (error al sincronizar)', 'error');
+  }
+}
+
+async function deleteEntry(id) {
+  if (!confirm('¿Eliminar esta entrada?')) return;
+  diaryEntries = diaryEntries.filter(e => e.id !== id);
+  renderEntries();
+  diaryStatus('Eliminando...', 'info');
+  try {
+    await commitDiary('Eliminar entrada');
+    diaryStatus('✅ Eliminado', 'ok');
+    setTimeout(() => diaryStatus('', ''), 2000);
+  } catch (e) {
+    diaryStatus('⚠️ Eliminado localmente (error al sincronizar)', 'error');
+  }
+}
+
+async function commitDiary(message) {
+  let token = getStoredToken();
+  if (!token) {
+    token = askForToken();
+    if (!token) throw new Error('No token');
+  }
+
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(diaryEntries, null, 2))));
+  const body = { message: message, content: content, branch: DIARY_CONFIG.branch };
+  if (diarySHA) body.sha = diarySHA;
+
+  const res = await fetch(API_URL, {
+    method: 'PUT',
+    headers: {
+      'Authorization': 'token ' + token,
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github.v3+json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      localStorage.removeItem('gh_diary_token');
+      throw new Error('Token inválido');
+    }
+    throw new Error('GitHub API error');
+  }
+  const data = await res.json();
+  diarySHA = data.content.sha;
 }
 
 function renderEntries() {
-  const entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
   const container = document.getElementById('diaryEntries');
   const empty = document.getElementById('diaryEmpty');
 
-  if (entries.length === 0) {
+  if (diaryEntries.length === 0) {
     container.innerHTML = '';
     container.appendChild(empty);
     empty.style.display = 'block';
@@ -920,7 +1019,7 @@ function renderEntries() {
   }
 
   empty.style.display = 'none';
-  container.innerHTML = entries.map(e => `
+  container.innerHTML = diaryEntries.map(e => `
     <div class="diary-entry ${e.member}">
       <button class="diary-entry-delete" onclick="deleteEntry(${e.id})" title="Eliminar">✕</button>
       <div class="diary-entry-header">
@@ -928,23 +1027,13 @@ function renderEntries() {
         <span class="diary-entry-date">${e.day ? 'Día ' + e.day + ' · ' : ''}${e.date}</span>
       </div>
       ${e.text ? `<div class="diary-entry-text">${escapeHtml(e.text)}</div>` : ''}
-      ${e.photo ? `<img src="${e.photo}" class="diary-entry-img">` : ''}
     </div>
   `).join('');
 }
 
-function deleteEntry(id) {
-  if (!confirm('¿Eliminar esta entrada?')) return;
-  let entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
-  entries = entries.filter(e => e.id !== id);
-  localStorage.setItem('scotlandDiary', JSON.stringify(entries));
-  renderEntries();
-}
-
 function exportDiary() {
-  const entries = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
-  if (entries.length === 0) { alert('No hay entradas para exportar'); return; }
-  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  if (diaryEntries.length === 0) { alert('No hay entradas para exportar'); return; }
+  const blob = new Blob([JSON.stringify(diaryEntries, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -956,16 +1045,17 @@ function exportDiary() {
 function importDiary(input) {
   if (!input.files || !input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const imported = JSON.parse(e.target.result);
-      let existing = JSON.parse(localStorage.getItem('scotlandDiary') || '[]');
-      const existingIds = new Set(existing.map(x => x.id));
+      const existingIds = new Set(diaryEntries.map(x => x.id));
       const newEntries = imported.filter(x => !existingIds.has(x.id));
-      existing = [...newEntries, ...existing];
-      localStorage.setItem('scotlandDiary', JSON.stringify(existing));
+      diaryEntries = [...newEntries, ...diaryEntries];
       renderEntries();
-      alert(`${newEntries.length} entradas importadas`);
+      diaryStatus('Importando...', 'info');
+      await commitDiary('Importar ' + newEntries.length + ' entradas');
+      diaryStatus('✅ ' + newEntries.length + ' entradas importadas', 'ok');
+      setTimeout(() => diaryStatus('', ''), 2000);
     } catch (err) {
       alert('Error al importar: archivo no válido');
     }
@@ -973,10 +1063,18 @@ function importDiary(input) {
   reader.readAsText(input.files[0]);
 }
 
-function clearDiary() {
+async function clearDiary() {
   if (!confirm('⚠️ ¿Borrar TODO el diario? Esta acción no se puede deshacer.')) return;
-  localStorage.removeItem('scotlandDiary');
+  diaryEntries = [];
   renderEntries();
+  diaryStatus('Borrando...', 'info');
+  try {
+    await commitDiary('Borrar diario');
+    diaryStatus('✅ Diario borrado', 'ok');
+    setTimeout(() => diaryStatus('', ''), 2000);
+  } catch (e) {
+    diaryStatus('⚠️ Borrado localmente (error al sincronizar)', 'error');
+  }
 }
 
 function escapeHtml(str) {
@@ -986,7 +1084,7 @@ function escapeHtml(str) {
 }
 
 // Init
-renderEntries();
+loadDiary();
 </script>
 </body>
 </html>
