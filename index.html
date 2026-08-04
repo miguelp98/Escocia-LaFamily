@@ -270,6 +270,133 @@
     </div>
   </div>
 
+  <!-- CHECKLIST ANTES DEL VIAJE -->
+  <div class="card">
+    <div class="card-header" style="background: linear-gradient(135deg, #e67e22, #f39c12)" onclick="toggleCard(this)">
+      <span>✅ Antes de comenzar el viaje revisa tener:</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.85em">
+        <div>
+          <h3 style="color:#e67e22;margin-bottom:8px;font-size:.95em">📄 Documentos</h3>
+          <div style="line-height:2">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Pasaporte</strong> — válido para entrar a UK desde España (DNI también sirve, pero pasaporte es más seguro)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>ETAs aprobados</strong> — Miguel, Juan, José, María Jesús (imprimir copia o tener en móvil)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Confirmaciones de reserva</strong> — alojamientos, Edinburgh Castle, Urquhart Castle, Coche Enterprise
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Permiso de conducir</strong> — carnet válido de UE (para Enterprise)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Seguro de viaje</strong> — recomendado (cubre cancelaciones, problemas médicos extra)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Tarjeta sanitaria europea (EHIC)</strong> — o su equivalente UK (GHIC). Cubre urgencias médicas en UK.
+            </label>
+          </div>
+        </div>
+        <div>
+          <h3 style="color:#e67e22;margin-bottom:8px;font-size:.95em">💰 Dinero y pagos</h3>
+          <div style="line-height:2">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Libras esterlinas (£)</strong> — sacar en ATM al llegar (Reino Unido NO usa €)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Tarjeta sin comisiones</strong> — Wise, Revolut o similar (evitar comisiones de cambio)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Efectivo para propinas</strong> — en pubs y restaurants es habitual (~10%)
+            </label>
+          </div>
+
+          <h3 style="color:#e67e22;margin-bottom:8px;margin-top:14px;font-size:.95em">🧥 Ropa y calzado</h3>
+          <div style="line-height:2">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Chaqueta impermeable</strong> — OBLIGATORIA. Llueve sin avisar.
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Ropa por capas</strong> — 12-18°C en agosto, mornings frescos
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Calzado cómodo y resistente al agua</strong> — caminaréis mucho (Old Town, castillos, Skye)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Paraguas compacto</strong> — el viento rompe paraguas grandes
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Bufanda ligera</strong> — para Highlands y Skye (puede neblinar)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.85em;margin-top:14px">
+        <div>
+          <h3 style="color:#e67e22;margin-bottom:8px;font-size:.95em">📱 Tecnología</h3>
+          <div style="line-height:2">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Adaptador UK (tipo G)</strong> — enchufes de 3 patas rectangulares. ¡NO son iguales que los europeos!
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Batería externa (powerbank)</strong> — los teléfonos se gastan con GPS y fotos
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Mapas offline descargados</strong> — Google Maps o Maps.me (la señal falla en Highlands/Skye)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>App Enterprise</strong> — para gestionar el coche
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Cámara + tarjeta SD</strong> — vais a hacer MUCHAS fotos
+            </label>
+          </div>
+        </div>
+        <div>
+          <h3 style="color:#e67e22;margin-bottom:8px;font-size:.95em">🏥 Salud y seguridad</h3>
+          <div style="line-height:2">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Medicación personal</strong> — llevar en maleta de mano
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Mascarillas</strong> — por si acaso (farmacias, transportes)
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Protector solar</strong> — sí, en agosto también hace sol en Highlands
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Repelente de mosquitos</strong> — en zonas de lagos/Highlands
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Número emergencias: 999 / 112</strong> — UK usa el 999 o 112
+            </label>
+          </div>
+
+          <h3 style="color:#e67e22;margin-bottom:8px;margin-top:14px;font-size:.95em">🚗 Si conducís</h3>
+          <div style="line-height:2">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Conducís por la IZQUIERDA</strong> — ojo al girar, roundabouts y parking
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Carnet de conducir válido UE</strong> — para Enterprise
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Gasolina: conducción por la izquierda</strong> — el depósito está al lado contrario
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 0">
+              <input type="checkbox" style="width:16px;height:16px;accent-color:#27ae60"> <strong>Single track roads</strong> — en Skye hay carreteras de un solo carril. Usad passing places.
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- COMIDA TRADICIONAL ESCOCESA -->
   <div class="card">
     <div class="card-header" style="background: linear-gradient(135deg, #c0392b, #e74c3c)" onclick="toggleCard(this)">
